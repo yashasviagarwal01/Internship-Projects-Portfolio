@@ -176,8 +176,9 @@ Interactive filters for:
 
 - 📓 [Google Colab Notebook](./Mutual_Fund_Analysis_Project.ipynb)
 - 📊 [Top 30 Mutual Funds Excel](./Top_30_Mutual_Funds.xlsx)
-- 📈 [Power BI Dashboard](./Mutual_Fund_Analysis_Dashboard.pbix)
-- 📄 [Project Report](./Mutual_Fund_Analysis_Report.pdf)
+- 📈 [Power BI Dashboard (.pbix)](./Mutual_Fund_Analysis_Dashboard.pbix)
+- 📄 [Power BI Dashboard PDF](./Mutual_Fund_Analysis_Dashboard.pdf)
+- 📝 [Project Report](./Mutual_Fund_Analysis_Report.docx)
 
 ---
 
