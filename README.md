@@ -19,7 +19,7 @@ This portfolio documents my internship work and demonstrates how I apply technic
 | # | Project | Tools & Technologies | Status |
 |---|---|---|---|
 | 01 | [💰 Mutual Fund Analysis](./01_Mutual-Fund-Analysis) | Python, Pandas, Excel, Power BI | ✅ Completed |
-| 02 | Coming Soon | — | 🔄 Upcoming |
+| 02 | [📈 Stock Market Analysis](02_Stock-Market-Analysis/) | SQL, MySQL, Data Analytics | ✅ Completed |
 | 03 | Coming Soon | — | 🔄 Upcoming |
 
 ---
