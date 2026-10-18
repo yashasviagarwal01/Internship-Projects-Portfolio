@@ -20,7 +20,7 @@ This portfolio documents my internship work and demonstrates how I apply technic
 |---|---|---|---|
 | 01 | [💰 Mutual Fund Analysis](./01_Mutual-Fund-Analysis) | Python, Pandas, Excel, Power BI | ✅ Completed |
 | 02 | [📈 Stock Market Analysis](02_Stock-Market-Analysis/) | SQL, MySQL, Data Analytics | ✅ Completed |
-| 03 | Coming Soon | — | 🔄 Upcoming |
+| 03 | [💄 SUGAR Cosmetics – Instagram Performance Analytics](03_Sugar-Cosmetics-Analytics/) | Power BI, Data Visualization, Social Media Analytics | ✅ Completed |
 
 ---
 
