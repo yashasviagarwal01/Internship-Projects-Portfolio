@@ -19,8 +19,9 @@ This portfolio documents my internship work and demonstrates how I apply technic
 | # | Project | Tools & Technologies | Status |
 |---|---|---|---|
 | 01 | [💰 Mutual Fund Analysis](./01_Mutual-Fund-Analysis) | Python, Pandas, Excel, Power BI | ✅ Completed |
-| 02 | [📈 Stock Market Analysis](02_Stock-Market-Analysis/) | SQL, MySQL, Data Analytics | ✅ Completed |
-| 03 | [💄 SUGAR Cosmetics – Instagram Performance Analytics](03_Sugar-Cosmetics-Analytics/) | Power BI, Data Visualization, Social Media Analytics | ✅ Completed |
+| 02 | [📈 Stock Market Analysis](./02_Stock-Market-Analysis/) | SQL, MySQL, Data Analytics | ✅ Completed |
+| 03 | [💄 SUGAR Cosmetics – Instagram Performance Analytics](./03_Sugar-Cosmetics-Analytics/) | Power BI, Data Visualization, Social Media Analytics | ✅ Completed |
+| 04 | [🏡 Real Estate Investment Advisor](./Real-Estate-Investment-Advisor/) ([Live App](https://estateiq-real-estate-advisor.streamlit.app/)) | Python, Pandas, Scikit-learn, MLflow, Streamlit, Plotly | ✅ Completed |
 
 ---
 
@@ -36,6 +37,8 @@ This portfolio documents my internship work and demonstrates how I apply technic
 - 🧹 Data Cleaning
 - 🔍 Exploratory Data Analysis
 - 📉 Statistical Analysis
+- 🗄️ SQL & MySQL
+- 🚀 Streamlit
 
 ---
 
