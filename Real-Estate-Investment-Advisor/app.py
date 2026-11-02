@@ -224,7 +224,8 @@ hr {
 
 @st.cache_data
 def load_data():
-    return pd.read_csv(BASE_DIR / "real_estate_ml_dataset.csv")
+    DATASET_URL = "https://huggingface.co/datasets/yashasvi02/real-estate-investment-data/resolve/main/real_estate_ml_dataset.csv"
+    return pd.read_csv(DATASET_URL)
 
 
 @st.cache_resource
