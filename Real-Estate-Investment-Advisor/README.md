@@ -15,3 +15,13 @@ A Machine Learning based Real Estate Investment Advisor that analyzes property d
 - 5-year property value estimation
 - Real estate market analysis
 - Interactive dashboard
+
+## Live Demo
+
+Explore the deployed application here:
+
+[**EstateIQ – Real Estate Investment Advisor**](https://estateiq-real-estate-advisor.streamlit.app/)
+
+## Project Repository
+
+This project is part of my Internship Projects Portfolio.
