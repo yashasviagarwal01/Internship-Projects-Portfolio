@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 BASE_DIR = Path(__file__).parent
-MODEL_DIR = BASE_DIR / "saved_models"
+MODEL_DIR = BASE_DIR 
 
 # =====================================================
 # PREMIUM CSS DESIGN
@@ -230,14 +230,9 @@ def load_data():
 
 @st.cache_resource
 def load_models():
-    classifier = joblib.load(
-        MODEL_DIR / "decision_tree_classifier.pkl"
-    )
-    regressor = joblib.load(
-        MODEL_DIR / "linear_regression.pkl"
-    )
+    classifier = joblib.load(BASE_DIR / "decision_tree_classifier.pkl")
+    regressor = joblib.load(BASE_DIR / "linear_regression.pkl")
     return classifier, regressor
-
 
 df = load_data()
 classifier, regressor = load_models()
