@@ -135,7 +135,6 @@ st.markdown(
 
 DATA_PATH = (
     Path(__file__).parent
-    / "data"
     / "Top_30_Mutual_Funds.xlsx"
 )
 
@@ -179,7 +178,7 @@ def load_data(file_path):
 if not DATA_PATH.exists():
     st.error(
         "Dataset file not found. Please place "
-        "Top_30_Mutual_Funds.xlsx inside the data folder."
+        "Top_30_Mutual_Funds.xlsx in the project folder."
     )
     st.stop()
 
