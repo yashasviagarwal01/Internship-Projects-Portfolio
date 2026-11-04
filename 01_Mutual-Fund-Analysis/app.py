@@ -1,7 +1,9 @@
-import streamlit as st
+
+from pathlib import Path
+
 import pandas as pd
 import plotly.express as px
-from pathlib import Path
+import streamlit as st
 
 
 # --------------------------------------------------
@@ -9,10 +11,10 @@ from pathlib import Path
 # --------------------------------------------------
 
 st.set_page_config(
-    page_title="FundIQ | Mutual Fund Analysis",
-    page_icon="📊",
+    page_title="FundIQ | Mutual Fund Intelligence",
+    page_icon="📈",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 
@@ -22,52 +24,87 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
 
 .stApp {
-    background-color: #0e1117;
-    color: #ffffff;
+    background: #0B1120;
+    color: #E5E7EB;
 }
 
 [data-testid="stSidebar"] {
-    background-color: #161b22;
+    background: #111827;
+    border-right: 1px solid #263247;
+}
+
+[data-testid="stSidebar"] * {
+    color: #E5E7EB;
 }
 
 .main-title {
-    font-size: 38px;
+    font-size: 34px;
     font-weight: 800;
-    color: #ffffff;
+    color: #F8FAFC;
 }
 
 .subtitle {
-    font-size: 16px;
-    color: #aab2bf;
+    color: #94A3B8;
+    font-size: 14px;
+    margin-bottom: 25px;
 }
 
 .metric-card {
-    background-color: #1c2330;
+    background: linear-gradient(135deg, #172554, #111827);
+    border: 1px solid #263B63;
+    border-radius: 14px;
     padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #303846;
+    min-height: 120px;
 }
 
 .metric-label {
-    color: #aab2bf;
-    font-size: 14px;
+    color: #94A3B8;
+    font-size: 13px;
+    margin-bottom: 10px;
 }
 
 .metric-value {
-    color: #ffffff;
+    color: #F8FAFC;
     font-size: 27px;
-    font-weight: bold;
+    font-weight: 800;
+}
+
+.metric-note {
+    color: #60A5FA;
+    font-size: 12px;
+    margin-top: 8px;
 }
 
 .section-title {
-    font-size: 23px;
+    color: #F8FAFC;
+    font-size: 20px;
     font-weight: 700;
-    color: #ffffff;
-    margin-top: 20px;
+    margin-top: 15px;
+    margin-bottom: 12px;
 }
 
+div[data-testid="stDataFrame"] {
+    border: 1px solid #263247;
+    border-radius: 10px;
+}
+
+div.stButton > button {
+    background: #2563EB;
+    color: white;
+    border: none;
+    border-radius: 8px;
+}
+
+hr {
+    border-color: #263247;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -76,38 +113,44 @@ st.markdown("""
 # LOAD DATASET
 # --------------------------------------------------
 
-DATA_PATH = Path(__file__).parent / "Top_30_Mutual_Funds.xlsx"
+BASE_DIR = Path(__file__).parent
+
+possible_paths = [
+    BASE_DIR / "Top_30_Mutual_Funds.xlsx",
+    BASE_DIR / "data" / "Top_30_Mutual_Funds.xlsx",
+]
+
+DATA_PATH = next(
+    (path for path in possible_paths if path.exists()),
+    None
+)
 
 
 @st.cache_data
-def load_data():
+def load_data(file_path):
 
-    data = pd.read_excel(DATA_PATH)
+    data = pd.read_excel(file_path)
 
-    # Clean column names
     data.columns = (
         data.columns.astype(str)
         .str.strip()
         .str.lower()
     )
 
-    # Create final_score from fund_score
+    # Create final_score from actual dataset column
     if "final_score" not in data.columns:
 
         if "fund_score" in data.columns:
             data["final_score"] = data["fund_score"]
 
-        elif "expense_score" in data.columns:
-            data["final_score"] = data["expense_score"]
-
         else:
             data["final_score"] = 0
 
-    # Create rank automatically
+    # Create rank if missing
     if "rank" not in data.columns:
 
         data = data.sort_values(
-            by="final_score",
+            "final_score",
             ascending=False
         ).reset_index(drop=True)
 
@@ -117,505 +160,728 @@ def load_data():
             range(1, len(data) + 1)
         )
 
+    # Convert numeric columns
+    numeric_columns = [
+        "rank",
+        "returns_1yr",
+        "returns_3yr",
+        "returns_5yr",
+        "expense_ratio",
+        "fund_size_cr",
+        "fund_age_yr",
+        "final_score",
+        "rating",
+        "fund_score",
+    ]
+
+    for column in numeric_columns:
+
+        if column in data.columns:
+            data[column] = pd.to_numeric(
+                data[column],
+                errors="coerce"
+            )
+
+    # Clean text columns
+    for column in [
+        "scheme_name",
+        "category",
+        "sub_category",
+        "amc_name",
+    ]:
+
+        if column in data.columns:
+            data[column] = data[column].astype("string").str.strip()
+
     return data
 
 
-try:
-    df = load_data()
-
-except FileNotFoundError:
+if DATA_PATH is None:
 
     st.error(
         "Dataset not found. Please upload "
-        "Top_30_Mutual_Funds.xlsx in the same folder as app.py."
+        "Top_30_Mutual_Funds.xlsx in the project folder "
+        "or inside the data folder."
     )
 
     st.stop()
 
-except Exception as e:
 
-    st.error(f"Unable to load dataset: {e}")
+try:
+    df = load_data(DATA_PATH)
+
+except Exception as error:
+
+    st.error(f"Unable to load dataset: {error}")
     st.stop()
 
 
+# Check important columns
+
+required_columns = [
+    "scheme_name",
+    "category",
+    "amc_name",
+    "returns_1yr",
+    "returns_3yr",
+    "returns_5yr",
+    "expense_ratio",
+    "final_score",
+    "rank",
+]
+
+missing = [
+    col for col in required_columns
+    if col not in df.columns
+]
+
+if missing:
+
+    st.error(f"Missing required columns: {missing}")
+    st.stop()
+
+
+df = df.dropna(subset=["scheme_name"]).copy()
+
+df["scheme_name"] = df["scheme_name"].astype(str)
+
+df = df.sort_values("rank")
+
+
 # --------------------------------------------------
-# HEADER
+# RISK LEVEL PREPARATION
 # --------------------------------------------------
 
-st.markdown(
-    '<div class="main-title">📊 FundIQ</div>',
-    unsafe_allow_html=True
-)
+if "risk_level" in df.columns:
 
-st.markdown(
-    '<div class="subtitle">'
-    'Mutual Fund Investment Intelligence Dashboard'
-    '</div>',
-    unsafe_allow_html=True
-)
+    risk_numeric = pd.to_numeric(
+        df["risk_level"],
+        errors="coerce"
+    )
 
-st.write("")
+    risk_text = df["risk_level"].astype("string").str.strip()
 
-st.markdown("---")
+    risk_labels = risk_text.str.title()
+
+    numeric_mask = risk_numeric.notna()
+
+    risk_labels.loc[numeric_mask] = (
+        risk_numeric.loc[numeric_mask].apply(
+            lambda x: (
+                "High" if x >= 6
+                else "Moderate" if x >= 4
+                else "Low"
+            )
+        )
+    )
+
+    df["risk_label"] = risk_labels.fillna("Unknown")
+
+else:
+
+    df["risk_label"] = "Unknown"
 
 
 # --------------------------------------------------
-# SIDEBAR FILTERS
+# HELPER FUNCTIONS
 # --------------------------------------------------
 
-st.sidebar.title("⚙️ Dashboard Filters")
+def format_number(value):
 
-filtered_df = df.copy()
+    if pd.isna(value):
+        return "N/A"
+
+    return f"{value:,.0f}"
 
 
-# Category filter
+def format_percent(value):
 
-if "category" in df.columns:
+    if pd.isna(value):
+        return "N/A"
+
+    return f"{value:.2f}%"
+
+
+def metric_card(label, value, note=""):
+
+    st.markdown(
+        f"""
+        <div class="metric-card">
+            <div class="metric-label">{label}</div>
+            <div class="metric-value">{value}</div>
+            <div class="metric-note">{note}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def style_chart(fig):
+
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="#111827",
+        plot_bgcolor="#111827",
+        font=dict(color="#CBD5E1", family="Inter"),
+        margin=dict(l=20, r=20, t=45, b=20),
+        legend=dict(bgcolor="rgba(0,0,0,0)")
+    )
+
+    fig.update_xaxes(gridcolor="#263247")
+    fig.update_yaxes(gridcolor="#263247")
+
+    return fig
+
+
+# --------------------------------------------------
+# SIDEBAR NAVIGATION
+# --------------------------------------------------
+
+with st.sidebar:
+
+    st.markdown(
+        """
+        <div style="padding:10px 0 20px 0;">
+            <div style="
+                font-size:28px;
+                font-weight:800;
+                color:#60A5FA;">
+                FundIQ
+            </div>
+            <div style="
+                font-size:11px;
+                letter-spacing:2px;
+                color:#94A3B8;">
+                MUTUAL FUND INTELLIGENCE
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("---")
+
+    page = st.radio(
+        "NAVIGATION",
+        [
+            "Overview",
+            "Fund Explorer",
+            "Performance Analysis",
+            "Risk Analysis",
+            "Top 30 Rankings",
+            "About Project",
+        ],
+        key="navigation"
+    )
+
+    st.markdown("---")
+
+    st.markdown("### Data Filters")
 
     categories = sorted(
-        df["category"].dropna().astype(str).unique()
+        df["category"].dropna().unique().tolist()
     )
 
-    selected_categories = st.sidebar.multiselect(
-        "Select Category",
+    selected_categories = st.multiselect(
+        "Fund Category",
         categories,
         default=categories
     )
 
-    filtered_df = filtered_df[
-        filtered_df["category"].astype(str).isin(
-            selected_categories
-        )
-    ]
-
-
-# Sub-category filter
-
-if "sub_category" in filtered_df.columns:
-
-    subcategories = sorted(
-        filtered_df["sub_category"]
-        .dropna()
-        .astype(str)
-        .unique()
+    amcs = sorted(
+        df["amc_name"].dropna().unique().tolist()
     )
 
-    selected_subcategories = st.sidebar.multiselect(
-        "Select Sub-Category",
-        subcategories,
-        default=subcategories
+    selected_amcs = st.multiselect(
+        "Asset Management Company",
+        amcs,
+        default=amcs
     )
 
-    filtered_df = filtered_df[
-        filtered_df["sub_category"].astype(str).isin(
-            selected_subcategories
-        )
-    ]
+    filtered_df = df[
+        df["category"].isin(selected_categories)
+        & df["amc_name"].isin(selected_amcs)
+    ].copy()
 
+    st.markdown("---")
 
-# Risk level filter
-
-if "risk_level" in filtered_df.columns:
-
-    risks = sorted(
-        filtered_df["risk_level"]
-        .dropna()
-        .astype(str)
-        .unique()
-    )
-
-    selected_risks = st.sidebar.multiselect(
-        "Select Risk Level",
-        risks,
-        default=risks
-    )
-
-    filtered_df = filtered_df[
-        filtered_df["risk_level"].astype(str).isin(
-            selected_risks
-        )
-    ]
-
-
-st.sidebar.markdown("---")
-
-st.sidebar.caption(
-    "FundIQ | Mutual Fund Analysis Project"
-)
+    st.caption("FundIQ | Mutual Fund Analytics")
+    st.caption("Historical data analysis. Not investment advice.")
 
 
 # --------------------------------------------------
-# KEY PERFORMANCE INDICATORS
+# PAGE HEADER
 # --------------------------------------------------
 
 st.markdown(
-    '<div class="section-title">📌 Investment Overview</div>',
+    f"""
+    <div class="main-title">{page}</div>
+    <div class="subtitle">
+        Mutual Fund Analytics Platform |
+        Explore performance, risk and rankings
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
-col1, col2, col3, col4 = st.columns(4)
-
-
-total_funds = len(filtered_df)
-
-total_amcs = (
-    filtered_df["amc_name"].nunique()
-    if "amc_name" in filtered_df.columns else 0
-)
-
-avg_rating = (
-    filtered_df["rating"].mean()
-    if "rating" in filtered_df.columns
-    and not filtered_df.empty else 0
-)
-
-avg_returns = (
-    filtered_df["returns_3yr"].mean()
-    if "returns_3yr" in filtered_df.columns
-    and not filtered_df.empty else 0
-)
-
-
-with col1:
-    st.metric(
-        "Total Mutual Funds",
-        total_funds
-    )
-
-with col2:
-    st.metric(
-        "Total AMCs",
-        total_amcs
-    )
-
-with col3:
-    st.metric(
-        "Average Rating",
-        f"{avg_rating:.2f}"
-    )
-
-with col4:
-    st.metric(
-        "Average 3-Year Return",
-        f"{avg_returns:.2f}%"
-    )
-
-
-st.markdown("---")
-
 
 # --------------------------------------------------
-# TOP PERFORMING MUTUAL FUNDS
+# OVERVIEW
 # --------------------------------------------------
 
-st.markdown(
-    '<div class="section-title">🏆 Top Performing Mutual Funds</div>',
-    unsafe_allow_html=True
-)
+if page == "Overview":
 
-if not filtered_df.empty:
+    st.markdown("### Portfolio Overview")
 
-    top_funds = filtered_df.sort_values(
-        by="final_score",
-        ascending=False
-    ).head(10)
+    col1, col2, col3, col4 = st.columns(4)
 
-    display_columns = [
-        col for col in [
-            "rank",
-            "scheme_name",
-            "category",
-            "sub_category",
-            "rating",
-            "risk_level",
-            "returns_1yr",
-            "returns_3yr",
-            "returns_5yr",
-            "final_score"
-        ]
-        if col in top_funds.columns
-    ]
-
-    st.dataframe(
-        top_funds[display_columns],
-        use_container_width=True,
-        hide_index=True
-    )
-
-else:
-
-    st.warning("No funds available for selected filters.")
-
-
-st.markdown("---")
-
-
-# --------------------------------------------------
-# RETURNS ANALYSIS
-# --------------------------------------------------
-
-st.markdown(
-    '<div class="section-title">📈 Returns Analysis</div>',
-    unsafe_allow_html=True
-)
-
-return_columns = [
-    col for col in [
-        "returns_1yr",
-        "returns_3yr",
-        "returns_5yr"
-    ]
-    if col in filtered_df.columns
-]
-
-if return_columns and not filtered_df.empty:
-
-    returns_data = filtered_df[
-        ["scheme_name"] + return_columns
-    ].melt(
-        id_vars="scheme_name",
-        var_name="Investment Period",
-        value_name="Returns"
-    )
-
-    fig_returns = px.bar(
-        returns_data,
-        x="scheme_name",
-        y="Returns",
-        color="Investment Period",
-        barmode="group",
-        title="Fund Returns Comparison",
-        template="plotly_dark"
-    )
-
-    fig_returns.update_layout(
-        xaxis_title="Mutual Funds",
-        yaxis_title="Returns (%)",
-        xaxis_tickangle=-45
-    )
-
-    st.plotly_chart(
-        fig_returns,
-        use_container_width=True
-    )
-
-else:
-
-    st.info("Returns data is not available.")
-
-
-st.markdown("---")
-
-
-# --------------------------------------------------
-# CATEGORY DISTRIBUTION
-# --------------------------------------------------
-
-st.markdown(
-    '<div class="section-title">📂 Category Distribution</div>',
-    unsafe_allow_html=True
-)
-
-col1, col2 = st.columns(2)
-
-
-with col1:
-
-    if "category" in filtered_df.columns and not filtered_df.empty:
-
-        category_data = (
-            filtered_df["category"]
-            .value_counts()
-            .reset_index()
+    with col1:
+        metric_card(
+            "Total Funds",
+            format_number(len(filtered_df)),
+            "Selected fund universe"
         )
 
-        category_data.columns = [
-            "Category",
-            "Count"
-        ]
-
-        fig_category = px.pie(
-            category_data,
-            names="Category",
-            values="Count",
-            hole=0.5,
-            title="Funds by Category",
-            template="plotly_dark"
+    with col2:
+        metric_card(
+            "Categories",
+            format_number(filtered_df["category"].nunique()),
+            "Fund classification"
         )
 
-        st.plotly_chart(
-            fig_category,
-            use_container_width=True
+    with col3:
+        metric_card(
+            "Average 1Y Return",
+            format_percent(filtered_df["returns_1yr"].mean()),
+            "Historical return"
         )
 
-
-with col2:
-
-    if "risk_level" in filtered_df.columns and not filtered_df.empty:
-
-        risk_data = (
-            filtered_df["risk_level"]
-            .value_counts()
-            .reset_index()
+    with col4:
+        metric_card(
+            "Average 3Y Return",
+            format_percent(filtered_df["returns_3yr"].mean()),
+            "Historical return"
         )
 
-        risk_data.columns = [
-            "Risk Level",
-            "Count"
-        ]
+    st.markdown("---")
 
-        fig_risk = px.pie(
-            risk_data,
-            names="Risk Level",
-            values="Count",
-            hole=0.5,
-            title="Risk Level Distribution",
-            template="plotly_dark"
-        )
+    if filtered_df.empty:
 
-        st.plotly_chart(
-            fig_risk,
-            use_container_width=True
-        )
+        st.warning("No funds match the selected filters.")
 
+    else:
 
-st.markdown("---")
+        left, right = st.columns(2)
 
+        with left:
 
-# --------------------------------------------------
-# AMC ANALYSIS
-# --------------------------------------------------
+            st.markdown("### Category Distribution")
 
-st.markdown(
-    '<div class="section-title">🏢 AMC Analysis</div>',
-    unsafe_allow_html=True
-)
+            category_data = (
+                filtered_df["category"]
+                .value_counts()
+                .reset_index()
+            )
 
-if "amc_name" in filtered_df.columns and not filtered_df.empty:
+            category_data.columns = [
+                "Category",
+                "Fund Count"
+            ]
 
-    amc_data = (
-        filtered_df["amc_name"]
-        .value_counts()
-        .head(10)
-        .reset_index()
-    )
+            fig = px.pie(
+                category_data,
+                names="Category",
+                values="Fund Count",
+                hole=0.55
+            )
 
-    amc_data.columns = [
-        "AMC",
-        "Number of Funds"
-    ]
+            st.plotly_chart(
+                style_chart(fig),
+                use_container_width=True
+            )
 
-    fig_amc = px.bar(
-        amc_data,
-        x="AMC",
-        y="Number of Funds",
-        title="Top AMCs by Number of Funds",
-        template="plotly_dark"
-    )
+        with right:
 
-    st.plotly_chart(
-        fig_amc,
-        use_container_width=True
-    )
+            st.markdown("### Top Funds by 3-Year Return")
 
+            top_returns = (
+                filtered_df
+                .dropna(subset=["returns_3yr"])
+                .nlargest(10, "returns_3yr")
+                .sort_values("returns_3yr")
+            )
 
-st.markdown("---")
+            fig = px.bar(
+                top_returns,
+                x="returns_3yr",
+                y="scheme_name",
+                orientation="h",
+                labels={
+                    "returns_3yr": "3-Year Return (%)",
+                    "scheme_name": "Fund"
+                }
+            )
 
+            st.plotly_chart(
+                style_chart(fig),
+                use_container_width=True
+            )
 
-# --------------------------------------------------
-# EXPENSE RATIO ANALYSIS
-# --------------------------------------------------
-
-st.markdown(
-    '<div class="section-title">💰 Expense Ratio Analysis</div>',
-    unsafe_allow_html=True
-)
-
-if (
-    "expense_ratio" in filtered_df.columns
-    and "scheme_name" in filtered_df.columns
-    and not filtered_df.empty
-):
-
-    expense_data = filtered_df.sort_values(
-        by="expense_ratio",
-        ascending=True
-    )
-
-    fig_expense = px.bar(
-        expense_data,
-        x="scheme_name",
-        y="expense_ratio",
-        title="Expense Ratio Comparison",
-        template="plotly_dark"
-    )
-
-    fig_expense.update_layout(
-        xaxis_title="Mutual Funds",
-        yaxis_title="Expense Ratio (%)",
-        xaxis_tickangle=-45
-    )
-
-    st.plotly_chart(
-        fig_expense,
-        use_container_width=True
-    )
-
-
-st.markdown("---")
-
-
-# --------------------------------------------------
-# FUND SEARCH
-# --------------------------------------------------
-
-st.markdown(
-    '<div class="section-title">🔍 Search Mutual Funds</div>',
-    unsafe_allow_html=True
-)
-
-search_query = st.text_input(
-    "Enter Mutual Fund Name"
-)
-
-if search_query:
-
-    search_results = filtered_df[
-        filtered_df["scheme_name"]
-        .astype(str)
-        .str.contains(
-            search_query,
-            case=False,
-            na=False
-        )
-    ]
-
-    if not search_results.empty:
+        st.markdown("### Highest Ranked Funds")
 
         st.dataframe(
-            search_results,
+            filtered_df[
+                [
+                    "rank",
+                    "scheme_name",
+                    "category",
+                    "returns_3yr",
+                    "returns_5yr",
+                    "final_score"
+                ]
+            ].head(10),
             use_container_width=True,
             hide_index=True
         )
 
-    else:
-
-        st.warning("No matching mutual fund found.")
-
-
-st.markdown("---")
-
 
 # --------------------------------------------------
-# COMPLETE DATASET
+# FUND EXPLORER
 # --------------------------------------------------
 
-with st.expander("📋 View Complete Mutual Fund Dataset"):
+elif page == "Fund Explorer":
+
+    st.markdown("### Explore Mutual Funds")
+
+    search_text = st.text_input(
+        "Search by fund name",
+        placeholder="Enter mutual fund name..."
+    )
+
+    explorer_df = filtered_df.copy()
+
+    if search_text:
+
+        explorer_df = explorer_df[
+            explorer_df["scheme_name"].str.contains(
+                search_text,
+                case=False,
+                na=False
+            )
+        ]
+
+    st.write(f"Showing {len(explorer_df)} funds")
 
     st.dataframe(
-        filtered_df,
+        explorer_df,
         use_container_width=True,
         hide_index=True
+    )
+
+    st.download_button(
+        "Download Filtered Data",
+        data=explorer_df.to_csv(index=False).encode("utf-8"),
+        file_name="filtered_mutual_funds.csv",
+        mime="text/csv"
+    )
+
+
+# --------------------------------------------------
+# PERFORMANCE ANALYSIS
+# --------------------------------------------------
+
+elif page == "Performance Analysis":
+
+    st.markdown("### Historical Performance Analysis")
+
+    if filtered_df.empty:
+
+        st.warning("No funds match the selected filters.")
+
+    else:
+
+        performance_metric = st.selectbox(
+            "Select Return Period",
+            [
+                "returns_1yr",
+                "returns_3yr",
+                "returns_5yr"
+            ],
+            format_func=lambda value: {
+                "returns_1yr": "1-Year Return",
+                "returns_3yr": "3-Year Return",
+                "returns_5yr": "5-Year Return"
+            }[value]
+        )
+
+        performance_data = (
+            filtered_df
+            .dropna(subset=[performance_metric])
+            .nlargest(15, performance_metric)
+            .sort_values(performance_metric)
+        )
+
+        fig = px.bar(
+            performance_data,
+            x=performance_metric,
+            y="scheme_name",
+            orientation="h",
+            color="category",
+            labels={
+                performance_metric: "Return (%)",
+                "scheme_name": "Fund Name"
+            }
+        )
+
+        st.plotly_chart(
+            style_chart(fig),
+            use_container_width=True
+        )
+
+        st.markdown("### Return Comparison")
+
+        comparison_df = filtered_df[
+            [
+                "scheme_name",
+                "returns_1yr",
+                "returns_3yr",
+                "returns_5yr"
+            ]
+        ].melt(
+            id_vars="scheme_name",
+            var_name="Period",
+            value_name="Return"
+        )
+
+        fig = px.box(
+            comparison_df,
+            x="Period",
+            y="Return",
+            color="Period",
+            points="all"
+        )
+
+        st.plotly_chart(
+            style_chart(fig),
+            use_container_width=True
+        )
+
+
+# --------------------------------------------------
+# RISK ANALYSIS
+# --------------------------------------------------
+
+elif page == "Risk Analysis":
+
+    st.markdown("### Risk and Return Analysis")
+
+    risk_data = filtered_df.dropna(
+        subset=["returns_3yr"]
+    ).copy()
+
+    if risk_data.empty:
+
+        st.warning("No suitable data available for risk analysis.")
+
+    else:
+
+        risk_data["risk_plot"] = pd.to_numeric(
+            risk_data["risk_level"],
+            errors="coerce"
+        ) if "risk_level" in risk_data.columns else pd.NA
+
+        if risk_data["risk_plot"].notna().any():
+
+            fig = px.scatter(
+                risk_data.dropna(subset=["risk_plot"]),
+                x="risk_plot",
+                y="returns_3yr",
+                color="category",
+                hover_name="scheme_name",
+                hover_data=[
+                    "returns_5yr",
+                    "expense_ratio",
+                    "final_score"
+                ],
+                labels={
+                    "risk_plot": "Risk Level",
+                    "returns_3yr": "3-Year Return (%)"
+                }
+            )
+
+            st.plotly_chart(
+                style_chart(fig),
+                use_container_width=True
+            )
+
+        else:
+
+            st.info(
+                "Risk level is categorical in this dataset. "
+                "The distribution chart below shows its categories."
+            )
+
+        left, right = st.columns(2)
+
+        with left:
+
+            st.markdown("### Risk Level Distribution")
+
+            risk_counts = (
+                risk_data["risk_label"]
+                .value_counts()
+                .reset_index()
+            )
+
+            risk_counts.columns = [
+                "Risk Level",
+                "Fund Count"
+            ]
+
+            fig = px.bar(
+                risk_counts,
+                x="Risk Level",
+                y="Fund Count",
+                color="Risk Level"
+            )
+
+            st.plotly_chart(
+                style_chart(fig),
+                use_container_width=True
+            )
+
+        with right:
+
+            st.markdown("### Expense Ratio Comparison")
+
+            expense_data = (
+                risk_data
+                .dropna(subset=["expense_ratio"])
+                .nsmallest(10, "expense_ratio")
+            )
+
+            fig = px.bar(
+                expense_data,
+                x="expense_ratio",
+                y="scheme_name",
+                orientation="h",
+                labels={
+                    "expense_ratio": "Expense Ratio (%)",
+                    "scheme_name": "Fund"
+                }
+            )
+
+            st.plotly_chart(
+                style_chart(fig),
+                use_container_width=True
+            )
+
+        st.info(
+            "This is descriptive risk analysis, "
+            "not a personalized investment recommendation."
+        )
+
+
+# --------------------------------------------------
+# TOP 30 RANKINGS
+# --------------------------------------------------
+
+elif page == "Top 30 Rankings":
+
+    st.markdown("### Fund Ranking & Scoring")
+
+    ranking_df = filtered_df.sort_values(
+        "final_score",
+        ascending=False
+    ).copy()
+
+    st.dataframe(
+        ranking_df[
+            [
+                "rank",
+                "scheme_name",
+                "category",
+                "risk_level",
+                "returns_1yr",
+                "returns_3yr",
+                "returns_5yr",
+                "final_score"
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.download_button(
+        "Download Ranking Data",
+        data=ranking_df.to_csv(index=False).encode("utf-8"),
+        file_name="mutual_fund_rankings.csv",
+        mime="text/csv"
+    )
+
+    st.caption(
+        "Rankings are based on the existing fund scores "
+        "available in the dataset."
+    )
+
+
+# --------------------------------------------------
+# ABOUT PROJECT
+# --------------------------------------------------
+
+elif page == "About Project":
+
+    st.markdown("### About FundIQ")
+
+    st.write(
+        """
+        FundIQ is a Mutual Fund Analysis project designed
+        to explore historical fund performance, risk
+        indicators, categories and rankings.
+
+        The application transforms a prepared mutual fund
+        dataset into an interactive analytics dashboard.
+        """
+    )
+
+    st.markdown("### Project Objectives")
+
+    st.markdown("""
+    - Analyze historical mutual fund returns.
+    - Compare funds across different categories.
+    - Explore risk and return characteristics.
+    - Understand AMC-wise fund distribution.
+    - Present the existing Top 30 fund ranking.
+    """)
+
+    st.markdown("### Technology Stack")
+
+    st.markdown("""
+    - Python
+    - Pandas
+    - Streamlit
+    - Plotly
+    - Excel
+    """)
+
+    st.markdown("### Dataset Information")
+
+    info_col1, info_col2 = st.columns(2)
+
+    with info_col1:
+        st.metric("Dataset Records", len(df))
+
+    with info_col2:
+        st.metric("Dataset Columns", len(df.columns))
+
+    st.markdown("### Important Disclaimer")
+
+    st.warning(
+        "This application is developed for educational "
+        "and analytical purposes. Historical mutual fund "
+        "returns do not guarantee future performance. "
+        "This application does not provide personalized "
+        "investment advice."
     )
 
 
@@ -627,16 +893,9 @@ st.markdown("---")
 
 st.markdown(
     """
-    <div style="text-align:center; color:#aab2bf;">
-
-    **FundIQ | Mutual Fund Investment Intelligence**
-
-    Developed as part of an Internship Project
-
-    <br>
-
-    Data-driven insights for informed investment research.
-
+    <div style="text-align:center; color:#94A3B8; padding:10px;">
+        <b>FundIQ | Mutual Fund Intelligence</b><br>
+        Educational Project | Data Analytics
     </div>
     """,
     unsafe_allow_html=True
