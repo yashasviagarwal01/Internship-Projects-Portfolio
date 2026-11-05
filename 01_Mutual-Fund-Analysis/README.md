@@ -1,5 +1,13 @@
 # 💰 Mutual Fund Analysis — Finding High Return & Low Risk Funds
 
+## 🚀 Live Dashboard
+
+Explore the interactive **FundIQ – Mutual Fund Investment Intelligence Dashboard**:
+
+🔗 [**Launch FundIQ Dashboard**](https://fundiq-mutual-fund-analysis.streamlit.app/)
+
+The dashboard allows users to explore and compare mutual funds based on their returns, risk, expenses, and other important parameters.
+
 ## 📌 Project Overview
 
 This project focuses on analyzing mutual fund data to identify and compare funds based on their returns, expense ratio, fund age, risk level and other important financial parameters.
