@@ -22,7 +22,7 @@ This portfolio documents my internship work and demonstrates how I apply technic
 | 02 | [📈 Stock Market Analysis](./02_Stock-Market-Analysis/) | SQL, MySQL, Data Analytics | ✅ Completed |
 | 03 | [💄 SUGAR Cosmetics – Instagram Performance Analytics](./03_Sugar-Cosmetics-Analytics/) | Power BI, Data Visualization, Social Media Analytics | ✅ Completed |
 | 04 | [🏡 Real Estate Investment Advisor](./Real-Estate-Investment-Advisor/) ([Live App](https://estateiq-real-estate-advisor.streamlit.app/)) | Python, Pandas, Scikit-learn, MLflow, Streamlit, Plotly | ✅ Completed |
-| 05 | 🚖 OLA Ride Insights (Live App) | Python, SQL Server, Power BI, Streamlit, Pandas, Plotly | ✅ Completed |
+| 05 | [🚖 OLA Ride Insights](https://github.com/yashasviagarwal01/Internship-Projects-Portfolio/tree/main/05_OLA-Ride-Insights) | [Live Dashboard](https://ola-business-insights.streamlit.app/) | Python, SQL Server, Power BI, Streamlit | Completed |
 
 ---
 
