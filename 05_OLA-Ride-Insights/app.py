@@ -11,26 +11,14 @@ st.set_page_config(
     layout="wide"
 )
 
-# CLEAN PROFESSIONAL CSS
+# CUSTOM CSS
 st.markdown("""
 <style>
+
+/* MAIN BACKGROUND */
 .stApp {
-    background-color: #F7F9FC;
+    background-color: #F5F7FA;
     color: #263445;
-}
-
-[data-testid="stSidebar"] {
-    background-color: #FFFFFF;
-    border-right: 1px solid #E5EAF0;
-}
-
-[data-testid="stSidebar"] h1 {
-    color: #087E8B;
-    font-size: 26px;
-}
-
-h1, h2, h3 {
-    color: #19344D;
 }
 
 .block-container {
@@ -38,9 +26,67 @@ h1, h2, h3 {
     padding-bottom: 2rem;
 }
 
+/* SIDEBAR */
+section[data-testid="stSidebar"] {
+    background-color: #FFFFFF !important;
+    border-right: 1px solid #E2E8F0;
+}
+
+section[data-testid="stSidebar"] > div {
+    background-color: #FFFFFF !important;
+}
+
+section[data-testid="stSidebar"] * {
+    color: #263445 !important;
+    text-shadow: none !important;
+    opacity: 1 !important;
+}
+
+/* SIDEBAR TITLE */
+section[data-testid="stSidebar"] h1 {
+    color: #087E8B !important;
+    font-size: 25px !important;
+}
+
+/* SIDEBAR RADIO OPTIONS */
+section[data-testid="stSidebar"] div[role="radiogroup"] {
+    gap: 7px;
+}
+
+section[data-testid="stSidebar"] div[role="radiogroup"] label {
+    background-color: #F3F6F9 !important;
+    border: 1px solid #E5EAF0 !important;
+    border-radius: 8px !important;
+    padding: 9px 12px !important;
+    margin-bottom: 5px !important;
+}
+
+section[data-testid="stSidebar"] div[role="radiogroup"] label p {
+    color: #263445 !important;
+    font-weight: 500 !important;
+}
+
+/* SELECTED OPTION */
+section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+    background-color: #DDF2F1 !important;
+    border: 1px solid #087E8B !important;
+}
+
+section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
+    color: #087E8B !important;
+    font-weight: 700 !important;
+}
+
+/* HEADINGS */
+h1, h2, h3 {
+    color: #19344D !important;
+}
+
+/* KPI CARDS */
 .metric-card {
-    background: #FFFFFF;
+    background-color: #FFFFFF;
     border: 1px solid #E5EAF0;
+    border-left: 4px solid #087E8B;
     border-radius: 12px;
     padding: 18px;
     min-height: 105px;
@@ -59,16 +105,14 @@ h1, h2, h3 {
     font-weight: 700;
 }
 
-[data-testid="stDataFrame"] {
-    background: white;
-}
-
+/* BUTTONS */
 .stButton button {
     background-color: #087E8B;
     color: white;
     border-radius: 8px;
     border: none;
 }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -76,22 +120,31 @@ h1, h2, h3 {
 # LOAD DATA
 @st.cache_data
 def load_data():
-    path = Path(__file__).parent / "OLA_Cleaned_Data.csv"
-    data = pd.read_csv(path)
+    file_path = Path(__file__).parent / "OLA_Cleaned_Data.csv"
+    data = pd.read_csv(file_path)
 
     data["Date"] = pd.to_datetime(data["Date"], errors="coerce")
 
-    for col in [
-        "Booking_Value", "Ride_Distance",
-        "Driver_Ratings", "Customer_Rating"
-    ]:
-        data[col] = pd.to_numeric(data[col], errors="coerce")
+    numeric_columns = [
+        "Booking_Value",
+        "Ride_Distance",
+        "Driver_Ratings",
+        "Customer_Rating",
+        "V_TAT",
+        "C_TAT"
+    ]
+
+    for col in numeric_columns:
+        if col in data.columns:
+            data[col] = pd.to_numeric(data[col], errors="coerce")
 
     return data
 
 
 df = load_data()
 
+
+# COMMON CALCULATIONS
 success = df[df["Booking_Status"] == "Success"]
 
 cancelled = df[
@@ -109,6 +162,7 @@ driver_cancelled = (
 ).sum()
 
 total_revenue = success["Booking_Value"].sum()
+total_distance = df["Ride_Distance"].sum()
 
 
 # KPI FUNCTION
@@ -123,6 +177,7 @@ def metric_card(label, value):
 
 def show_kpis(items):
     cols = st.columns(len(items))
+
     for col, (label, value) in zip(cols, items):
         with col:
             metric_card(label, value)
@@ -146,7 +201,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("July 2024 | Ride Analytics")
+st.sidebar.caption("JULY 2024 | RIDE ANALYTICS")
 
 
 # 1. EXECUTIVE OVERVIEW
@@ -168,23 +223,35 @@ if page == "Executive Overview":
 
     with col1:
         st.subheader("Booking Status Breakdown")
+
         status = df["Booking_Status"].value_counts().reset_index()
         status.columns = ["Status", "Bookings"]
 
         fig = px.pie(
-            status, names="Status", values="Bookings",
+            status,
+            names="Status",
+            values="Bookings",
             hole=0.45
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
         st.subheader("Ride Volume Over Time")
-        daily = df.groupby("Date")["Booking_ID"].count().reset_index()
+
+        daily = (
+            df.groupby("Date")["Booking_ID"]
+            .count()
+            .reset_index()
+        )
 
         fig = px.line(
-            daily, x="Date", y="Booking_ID",
+            daily,
+            x="Date",
+            y="Booking_ID",
             markers=True
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -201,41 +268,60 @@ elif page == "Vehicle Analysis":
         Total_Bookings=("Booking_ID", "count")
     ).reset_index()
 
-    success_vehicle = success.groupby("Vehicle_Type")[
-        "Booking_Value"
-    ].sum().reset_index(name="Success_Booking_Value")
+    success_vehicle = (
+        success.groupby("Vehicle_Type")["Booking_Value"]
+        .sum()
+        .reset_index(name="Success_Booking_Value")
+    )
 
     vehicle = vehicle.merge(
-        success_vehicle, on="Vehicle_Type", how="left"
+        success_vehicle,
+        on="Vehicle_Type",
+        how="left"
+    )
+
+    vehicle["Success_Booking_Value"] = (
+        vehicle["Success_Booking_Value"].fillna(0)
     )
 
     show_kpis([
         ("Vehicle Types", vehicle["Vehicle_Type"].nunique()),
         ("Total Bookings", f"{len(df):,}"),
-        ("Total Distance", f"{df['Ride_Distance'].sum():,.0f} km")
+        ("Total Distance", f"{total_distance:,.0f} km")
     ])
 
     st.subheader("Vehicle Performance Table")
-    st.dataframe(vehicle.round(2), use_container_width=True, hide_index=True)
+
+    st.dataframe(
+        vehicle.round(2),
+        use_container_width=True,
+        hide_index=True
+    )
 
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("Booking Value by Vehicle")
+
         fig = px.bar(
-            vehicle, x="Vehicle_Type",
+            vehicle,
+            x="Vehicle_Type",
             y="Total_Booking_Value",
             color="Vehicle_Type"
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
         st.subheader("Successful Booking Value")
+
         fig = px.bar(
-            vehicle, x="Vehicle_Type",
+            vehicle,
+            x="Vehicle_Type",
             y="Success_Booking_Value",
             color="Vehicle_Type"
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -248,7 +334,7 @@ elif page == "Revenue Analysis":
     show_kpis([
         ("Total Revenue", f"₹{total_revenue:,.0f}"),
         ("Average Booking Value", f"₹{success['Booking_Value'].mean():,.2f}"),
-        ("Total Ride Distance", f"{df['Ride_Distance'].sum():,.0f} km"),
+        ("Total Ride Distance", f"{total_distance:,.0f} km"),
         ("Average Ride Distance", f"{df['Ride_Distance'].mean():,.2f} km")
     ])
 
@@ -256,26 +342,38 @@ elif page == "Revenue Analysis":
 
     with col1:
         st.subheader("Revenue by Payment Method")
-        payment = success.groupby("Payment_Method")[
-            "Booking_Value"
-        ].sum().reset_index()
+
+        payment = (
+            success.groupby("Payment_Method")["Booking_Value"]
+            .sum()
+            .reset_index()
+        )
 
         fig = px.bar(
-            payment, x="Payment_Method",
-            y="Booking_Value", color="Payment_Method"
+            payment,
+            x="Payment_Method",
+            y="Booking_Value",
+            color="Payment_Method"
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
         st.subheader("Revenue by Date")
-        revenue_date = success.groupby("Date")[
-            "Booking_Value"
-        ].sum().reset_index()
+
+        revenue_date = (
+            success.groupby("Date")["Booking_Value"]
+            .sum()
+            .reset_index()
+        )
 
         fig = px.line(
-            revenue_date, x="Date",
-            y="Booking_Value", markers=True
+            revenue_date,
+            x="Date",
+            y="Booking_Value",
+            markers=True
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -296,26 +394,40 @@ elif page == "Cancellation Analysis":
     with col1:
         st.subheader("Incomplete Rides by Reason")
 
-        reason = df["Incomplete_Rides_Reason"].dropna().value_counts().reset_index()
+        reason = (
+            df["Incomplete_Rides_Reason"]
+            .dropna()
+            .value_counts()
+            .reset_index()
+        )
+
         reason.columns = ["Reason", "Count"]
 
         fig = px.bar(
-            reason, x="Count", y="Reason",
+            reason,
+            x="Count",
+            y="Reason",
             orientation="h"
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
         st.subheader("Cancelled Rides by Vehicle")
 
-        cancel_vehicle = cancelled.groupby("Vehicle_Type")[
-            "Booking_ID"
-        ].count().reset_index(name="Cancelled Rides")
+        cancel_vehicle = (
+            cancelled.groupby("Vehicle_Type")["Booking_ID"]
+            .count()
+            .reset_index(name="Cancelled Rides")
+        )
 
         fig = px.bar(
-            cancel_vehicle, x="Vehicle_Type",
-            y="Cancelled Rides", color="Vehicle_Type"
+            cancel_vehicle,
+            x="Vehicle_Type",
+            y="Cancelled Rides",
+            color="Vehicle_Type"
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -336,26 +448,38 @@ elif page == "Ratings Analysis":
 
     with col1:
         st.subheader("Average Driver Rating by Vehicle")
-        driver_rating = df.groupby("Vehicle_Type")[
-            "Driver_Ratings"
-        ].mean().reset_index()
+
+        driver_rating = (
+            df.groupby("Vehicle_Type")["Driver_Ratings"]
+            .mean()
+            .reset_index()
+        )
 
         fig = px.bar(
-            driver_rating, x="Vehicle_Type",
-            y="Driver_Ratings", color="Vehicle_Type"
+            driver_rating,
+            x="Vehicle_Type",
+            y="Driver_Ratings",
+            color="Vehicle_Type"
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
         st.subheader("Average Customer Rating by Vehicle")
-        customer_rating = df.groupby("Vehicle_Type")[
-            "Customer_Rating"
-        ].mean().reset_index()
+
+        customer_rating = (
+            df.groupby("Vehicle_Type")["Customer_Rating"]
+            .mean()
+            .reset_index()
+        )
 
         fig = px.bar(
-            customer_rating, x="Vehicle_Type",
-            y="Customer_Rating", color="Vehicle_Type"
+            customer_rating,
+            x="Vehicle_Type",
+            y="Customer_Rating",
+            color="Vehicle_Type"
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -365,14 +489,15 @@ elif page == "About Project":
     st.title("About OLA Ride Insights")
 
     st.write(
-        "OLA Ride Insights is a data analytics project "
-        "that analyzes ride bookings, revenue, vehicle performance, "
+        "OLA Ride Insights is a data analytics project that "
+        "analyzes ride bookings, revenue, vehicle performance, "
         "cancellations and customer satisfaction."
     )
 
     st.markdown("---")
 
     st.subheader("Project Objectives")
+
     st.markdown("""
     - Analyze overall ride booking performance.
     - Compare different vehicle categories.
@@ -382,6 +507,7 @@ elif page == "About Project":
     """)
 
     st.subheader("Tools & Technologies")
+
     st.markdown("""
     - Python
     - SQL Server
@@ -400,10 +526,12 @@ elif page == "About Project":
         metric_card("Total Columns", f"{len(df.columns)}")
 
     st.subheader("Dataset Preview")
-    st.dataframe(df.head(10), use_container_width=True)
+    st.dataframe(
+        df.head(10),
+        use_container_width=True
+    )
 
 
 # FOOTER
 st.markdown("---")
 st.caption("OLA Ride Insights | Data Analytics Project")
-
